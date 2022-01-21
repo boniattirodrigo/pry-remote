@@ -1,5 +1,5 @@
 require 'pry'
-require 'slop'
+require 'optparse'
 require 'drb'
 require 'readline'
 require 'open3'
@@ -139,6 +139,30 @@ module PryRemote
     end
   end
 
+  class Parser
+    def self.parse(options)
+      args = {}
+
+      opt_parser = OptionParser.new do |opts|
+        opts.on("-sSERVER", "--server=SERVER", String, "Host of the server (#{DefaultHost})") do |s|
+          args[:server] = s
+        end
+
+        opts.on("-pPORT", "--port=PORT", Integer, "Port of the server (#{DefaultPort})") do |p|
+          args[:port] = p
+        end
+
+        opts.on("-h", "--help", "Prints this help") do
+          puts opts
+          exit
+        end
+      end
+
+      opt_parser.parse!(options)
+      return args
+    end
+  end
+
   class Server
     def self.run(object, host = DefaultHost, port = DefaultPort, options = {})
       new(object, host, port, options).run
@@ -260,26 +284,10 @@ module PryRemote
   # Parses arguments and allows to start the client.
   class CLI
     def initialize(args = ARGV)
-      params = Slop.parse args, :help => true do
-        banner "#$PROGRAM_NAME [OPTIONS]"
+      params = Parser.parse(args)
 
-        on :s, :server=, "Host of the server (#{DefaultHost})", :argument => :optional,
-           :default => DefaultHost
-        on :p, :port=, "Port of the server (#{DefaultPort})", :argument => :optional,
-           :as => Integer, :default => DefaultPort
-        on :w, :wait, "Wait for the pry server to come up",
-           :default => false
-        on :r, :persist, "Persist the client to wait for the pry server to come up each time",
-           :default => false
-        on :c, :capture, "Captures $stdout and $stderr from the server (true)",
-           :default => true
-        on :f, "Disables loading of .pryrc and its plugins, requires, and command history "
-      end
-
-      exit if params.help?
-
-      @host = params[:server]
-      @port = params[:port]
+      @host = params[:server] || DefaultHost
+      @port = params[:port] || DefaultPort
 
       @wait = params[:wait]
       @persist = params[:persist]
