@@ -141,7 +141,10 @@ module PryRemote
 
   class Parser
     def self.parse(options)
-      args = {}
+      args = {
+        server: DefaultHost,
+        port: DefaultPort
+      }
 
       opt_parser = OptionParser.new do |opts|
         opts.on("-sSERVER", "--server=SERVER", String, "Host of the server (#{DefaultHost})") do |s|
@@ -286,8 +289,8 @@ module PryRemote
     def initialize(args = ARGV)
       params = Parser.parse(args)
 
-      @host = params[:server] || DefaultHost
-      @port = params[:port] || DefaultPort
+      @host = params[:server]
+      @port = params[:port]
 
       @wait = params[:wait]
       @persist = params[:persist]
